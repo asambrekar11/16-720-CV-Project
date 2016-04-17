@@ -317,6 +317,8 @@ std::vector<Matx34f> GetFastProjectionMatrix(Matx33f E)
     
 }
 
+
+
 std::vector<Matx31f> Triangulate(std::vector<Point2f> kps1,
                                  std::vector<Point2f> kps2,
                                  Matx33f K1, Matx33f K2,
@@ -331,13 +333,56 @@ std::vector<Matx31f> Triangulate(std::vector<Point2f> kps1,
     }
     
     
-    for(int i=0;i<X.size();i++)
+//    for(int i=0;i<X.size();i++)
+//    {
+//        cout<<X[i].t()<<"\n";
+//        
+//    }
+    
+    return X;
+}
+
+
+Matx34f GetCorrectPrjMatrAndTriangulate(std::vector<Point2f> kps1,
+                                        std::vector<Point2f> kps2,
+                                        Matx33f K1, Matx33f K2,
+                                        Matx34f PrjMatx1,
+                                        std::vector<Matx34f> PrjMatx2,
+                                        std::vector<Matx31f> &X)
+{
+    Matx34f M2;
+    
+    for(int i=0;i<PrjMatx2.size();i++)
     {
-        cout<<X[i].t()<<"\n";
+        X = Triangulate(kps1, kps2, K1, K2, PrjMatx1, PrjMatx2[i]);
+        std::vector<Matx41f> X1;
+        convertPointsToHomogeneous(X, X1);
+        
+        int j;
+        for(j=0;j<X1.size();j++)
+        {
+            
+            
+            if((PrjMatx2[i]*X1[i])(0,2)<0)
+            {
+                break;
+                
+            }
+            
+        }
+        
+        if(j==(int)X1.size())
+        {
+            M2 = (Matx34f)PrjMatx2[i];
+            X = Triangulate(kps1, kps2, K1, K2, PrjMatx1, PrjMatx2[i]);
+        }
+        
         
     }
     
-    return X;
+    
+    
+    return M2;
 }
 
 
@@ -404,13 +449,21 @@ int main(void)
     //Get second camera projection matrix
     PrjMatx2 = GetProjectionMatrix(E);
     
-    //Triangulate points using least square problem
-    std::vector<Matx31f> X = Triangulate(kps1, kps2, K1, K2, PrjMatx1, PrjMatx2[1]);
+    std::vector<Matx31f> X;
+    
+    //Get Correct Projection Matrix and Triangulate points by formulating a least square problem
+    GetCorrectPrjMatrAndTriangulate(kps1, kps2, K1, K2, PrjMatx1, PrjMatx2, X);
+    
+       for(int i=0;i<X.size();i++)
+        {
+         cout<<X[i].t()<<"\n";
+    
+        }
 
     //Approach 2 through stereo matching
-    StereoMatching(left, right);
+    //StereoMatching(left, right);
     
-    waitKey(0);
+    //waitKey(0);
 
     
     return 0;
