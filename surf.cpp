@@ -460,7 +460,7 @@ int main(void)
     
         }
 
-    //Approach 2 through stereo matching
+    
     //StereoMatching(left, right);
     
     //waitKey(0);
