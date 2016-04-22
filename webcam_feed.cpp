@@ -239,7 +239,7 @@ int main(void)
     
     
     //clustering
-    int clusterNum = 3;
+    int clusterNum = 5;
     int attempts = 10;
     Mat labels1,labels2;
     Mat_<double> centres1,centres2;
@@ -345,23 +345,23 @@ int main(void)
                     z_leftnext.x = mean_.at<double>(0,0);
                     z_leftnext.y = mean_.at<double>(0,1);
                     
-                    if(z_leftnext.x>z_leftprev.x&&norm(z_leftprev-z_leftnext)>10)
+                    if(z_leftnext.x>z_leftprev.x&&norm(z_leftprev-z_leftnext)>5)
                     {
                         ctrl_text += " RIGHT";
                     }
-                    if(z_leftnext.x<z_leftprev.x&&norm(z_leftprev-z_leftnext)>10)
+                    if(z_leftnext.x<z_leftprev.x&&norm(z_leftprev-z_leftnext)>5)
                     {
                         ctrl_text += " LEFT";
                     }
-                    if(z_leftnext.y>z_leftprev.y&&norm(z_leftprev-z_leftnext)>10)
+                    if(z_leftnext.y>z_leftprev.y&&norm(z_leftprev-z_leftnext)>5)
                     {
                         ctrl_text += " DOWN";
                     }
-                    if(z_leftnext.y<z_leftprev.y&&norm(z_leftprev-z_leftnext)>10)
+                    if(z_leftnext.y<z_leftprev.y&&norm(z_leftprev-z_leftnext)>5)
                     {
                         ctrl_text += " UP";
                     }
-                    if(norm(z_leftprev-z_leftnext)<10)
+                    if(norm(z_leftprev-z_leftnext)<5)
                     {
                         ctrl_text = "STABLE";
                     }
@@ -476,23 +476,23 @@ int main(void)
                     z_rightnext.x = mean_.at<double>(0,0);
                     z_rightnext.y = mean_.at<double>(0,1);
                     
-                    if(z_rightnext.x>z_rightprev.x&&(double)norm(z_rightprev-z_rightnext)>10)
+                    if(z_rightnext.x>z_rightprev.x&&(double)norm(z_rightprev-z_rightnext)>5)
                     {
                         ctrl_text += " RIGHT";
                     }
-                    if(z_rightnext.x<z_rightprev.x&&(double)norm(z_rightprev-z_rightnext)>10)
+                    if(z_rightnext.x<z_rightprev.x&&(double)norm(z_rightprev-z_rightnext)>5)
                     {
                         ctrl_text += " LEFT";
                     }
-                    if(z_rightnext.y>z_rightprev.y&&(double)norm(z_rightprev-z_rightnext)>10)
+                    if(z_rightnext.y>z_rightprev.y&&(double)norm(z_rightprev-z_rightnext)>5)
                     {
                         ctrl_text += " DOWN";
                     }
-                    if(z_rightnext.y<z_rightprev.y&&(double)norm(z_rightprev-z_rightnext)>10)
+                    if(z_rightnext.y<z_rightprev.y&&(double)norm(z_rightprev-z_rightnext)>5)
                     {
                         ctrl_text += " UP";
                     }
-                    if((double)norm(z_rightprev-z_rightnext)<10)
+                    if((double)norm(z_rightprev-z_rightnext)<5)
                     {
                         ctrl_text = "STABLE";
                     }
