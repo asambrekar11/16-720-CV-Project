@@ -31,12 +31,13 @@ using namespace cv::ximgproc;
 
 vector<Point2f> prevleftpts, prevrightpts;
 Mat prevleftimg, prevrightimg;
+Point2f z_leftprev,z_leftnext,z_rightprev,z_rightnext;
 
 #define MIN_FEATURES (uint) 100
 #define FEATURE_THRESHOLD (uint) 400
 #define MAX_FEATURES (uint) 900
 #define QUALITY_EIGVALUE (double) 0.01
-#define MIN_DISTANCE (double) 3
+#define MIN_DISTANCE (double) 5
 #define OF_MARGIN (double) 0.5
 
 #define WIDTH 640
@@ -234,30 +235,14 @@ int main(void)
 {
     int k=0;
     int frame_num=0;
-    
-    Point2f a(10,10);
-    Point2f b(0,10);
-    
-    std::vector<Point2f> points;
-    
-    points.push_back(a);
-    points.push_back(b);
-
-    
-    
     cv::Mat mean_;
-    cv::reduce(points, mean_, 0, CV_REDUCE_AVG);
     
-    cv::Point2f mean(mean_.at<float>(0,0), mean_.at<float>(0,1));
-    
-    cout<<sum(points)[0]<<"\n";
-    cout<<sum(points)[1]<<"\n";
     
     //clustering
     int clusterNum = 3;
     int attempts = 10;
-    Mat labels1,labels2,labels3,labels4;
-    Mat_<double> centres1,centres2,centres3,centres4;
+    Mat labels1,labels2;
+    Mat_<double> centres1,centres2;
     
     
     TermCriteria TC;
@@ -268,6 +253,12 @@ int main(void)
     CvCapture *capture2 = cvCaptureFromCAM(2);
     
     double t,t1=0;
+    
+    z_leftprev.x = 0;
+    z_leftprev.y = 0;
+    
+    z_rightprev.x = 0;
+    z_rightprev.y = 0;
     
     while(1)
     {
@@ -291,7 +282,6 @@ int main(void)
         
         
             vector<Point2f> nextleftpts,kpts1,vkpts1;
-            double left_avg, right_avg, up_avg, down_avg;
             if(prevleftpts.size()<MIN_FEATURES)
             {
                 ctrl_text = "STOP MOVING";
@@ -316,8 +306,6 @@ int main(void)
             cvtColor(g_greyscale_image_left, left_mask2, CV_GRAY2BGR);
             
                 ctrl_text = "GO";
-                double left_of_x = 0, left_of_y = 0, right_of_x = 0, right_of_y = 0, up_of_x = 0, up_of_y = 0, down_of_x = 0, down_of_y = 0;
-                int left_count = 0, right_count = 0, up_count = 0, down_count = 0;
                 
             for(size_t i=0;i<nextleftpts.size();i++)
             {
@@ -340,32 +328,6 @@ int main(void)
                     }
                     
                     
-                    if(nextleftpts[i].x < (double)640/2.0)
-                    {
-                        left_of_x += nextleftpts[i].x - prevleftpts[i].x;
-                        left_of_y += nextleftpts[i].y - prevleftpts[i].y;
-                        left_count++;
-                    }
-                    else
-                    {
-                        right_of_x += nextleftpts[i].x - prevleftpts[i].x;
-                        right_of_y += nextleftpts[i].y - prevleftpts[i].y;
-                        right_count++;
-                    }
-                    if(nextleftpts[i].y < (double)360/2.0)
-                    {
-                        up_of_x += nextleftpts[i].x - prevleftpts[i].x;
-                        up_of_y += nextleftpts[i].y - prevleftpts[i].y;
-                        up_count++;
-                    }
-                    else
-                    {
-                        down_of_x += nextleftpts[i].x - prevleftpts[i].x;
-                        down_of_y += nextleftpts[i].y - prevleftpts[i].y;
-                        down_count++;
-                    }
-
-                    
                         vkpts1.push_back((q-p)*getTickFrequency()/(t-t1));
                         kpts1.push_back(nextleftpts[i]);
                     
@@ -373,54 +335,39 @@ int main(void)
             }
                
                 
-                left_of_x /= (double)left_count;
-                left_of_y /= (double)left_count;
-                double left_of = pow(pow(left_of_x, 2) + pow(left_of_y, 2), 0.5);
-                right_of_x /= (double)right_count;
-                right_of_y /= (double)right_count;
-                double right_of = pow(pow(right_of_x, 2) + pow(right_of_y, 2), 0.5);
-                up_of_x /= (double)up_count;
-                up_of_y /= (double)up_count;
-                double up_of = pow(pow(up_of_x, 2) + pow(up_of_y, 2), 0.5);
-                down_of_x /= (double)down_count;
-                down_of_y /= (double)down_count;
-                double down_of = pow(pow(down_of_x, 2) + pow(down_of_y, 2), 0.5);
-                
-                if(1.0 - right_of/left_of > OF_MARGIN)
-                {
-                    ctrl_text += " RIGHT";
-                    //if(turn_prev > 0) l_turn = (1 + (left_of - right_of)/(left_of + right_of))*turn_prev;
-                    //else l_turn = TURN;
-                }
-                else if(1.0 - left_of/right_of > OF_MARGIN)
-                {
-                    ctrl_text += " LEFT";
-                    //if(turn_prev < 0) l_turn = (1 + (right_of - left_of)/(right_of + left_of))*turn_prev;
-                    //else l_turn = -1.0*TURN;
-                }
-                if(1.0 - down_of/up_of > OF_MARGIN)
-                {
-                    ctrl_text += " DOWN";
-                    //if(alt_prev < 0) l_alt = (1 + (up_of - down_of)/(up_of + down_of))*alt_prev;
-                    //else l_alt = -1.0*ALT;
-                }
-                else if(1.0 - up_of/down_of > OF_MARGIN)
-                {
-                    ctrl_text += " UP";
-                    //if(alt_prev > 0) l_alt = (1 + (down_of - up_of)/(down_of + up_of))*alt_prev;
-                    //else l_alt = ALT;
-                }
-                if(ctrl_text.compare("GO") == 0) ctrl_text += " STRAIGHT";
-
-                left_avg = left_of;
-                right_avg = right_of;
-                up_avg = up_of;
-                down_avg = down_of;
-                
+               
                 if(kpts1.size()!=0)
                 {
                     kmeans(kpts1, clusterNum, labels1, TC, attempts,  KMEANS_PP_CENTERS, centres1);
                     kmeans(vkpts1, clusterNum, labels2, TC, attempts,  KMEANS_PP_CENTERS, centres2);
+                    
+                    reduce(centres1, mean_, 0, CV_REDUCE_AVG);
+                    z_leftnext.x = mean_.at<double>(0,0);
+                    z_leftnext.y = mean_.at<double>(0,1);
+                    
+                    if(z_leftnext.x>z_leftprev.x&&norm(z_leftprev-z_leftnext)>10)
+                    {
+                        ctrl_text += " RIGHT";
+                    }
+                    if(z_leftnext.x<z_leftprev.x&&norm(z_leftprev-z_leftnext)>10)
+                    {
+                        ctrl_text += " LEFT";
+                    }
+                    if(z_leftnext.y>z_leftprev.y&&norm(z_leftprev-z_leftnext)>10)
+                    {
+                        ctrl_text += " DOWN";
+                    }
+                    if(z_leftnext.y<z_leftprev.y&&norm(z_leftprev-z_leftnext)>10)
+                    {
+                        ctrl_text += " UP";
+                    }
+                    if(norm(z_leftprev-z_leftnext)<10)
+                    {
+                        ctrl_text = "STABLE";
+                    }
+                    
+                    z_leftprev.x = z_leftnext.x;
+                    z_leftprev.y = z_leftnext.y;
                 }
                 
                 for(int i=0;i<centres1.rows;i++)
@@ -433,12 +380,6 @@ int main(void)
                     q.y = centres1.at<double>(i,1)+40;
                     rectangle(left_mask1, p, q, CV_RGB(255, 255, 0));
                     
-                    p.x = centres2.at<double>(i,0)-40;
-                    p.y = centres2.at<double>(i,1)-40;
-                    
-                    q.x = centres2.at<double>(i,0)+40;
-                    q.y = centres2.at<double>(i,1)+40;
-                    rectangle(left_mask2, p, q, CV_RGB(255, 0, 255));
                 }
             
                 for(int i=0;i<kpts1.size();i++)
@@ -478,6 +419,7 @@ int main(void)
             if(prevrightpts.size()<MIN_FEATURES)
             {
                 //control input
+                ctrl_text = "STOP MOVING";
             }
             else if(frame_num>0)
             {
@@ -524,10 +466,39 @@ int main(void)
                     }
                 }
 
+                ctrl_text = "GO";
                 if(kpts2.size()!=0)
                 {
                     kmeans(kpts2, clusterNum, labels1, TC, attempts,  KMEANS_PP_CENTERS, centres1);
                     kmeans(vkpts2, clusterNum, labels2, TC, attempts,  KMEANS_PP_CENTERS, centres2);
+                    
+                    reduce(centres1, mean_, 0, CV_REDUCE_AVG);
+                    z_rightnext.x = mean_.at<double>(0,0);
+                    z_rightnext.y = mean_.at<double>(0,1);
+                    
+                    if(z_rightnext.x>z_rightprev.x&&(double)norm(z_rightprev-z_rightnext)>10)
+                    {
+                        ctrl_text += " RIGHT";
+                    }
+                    if(z_rightnext.x<z_rightprev.x&&(double)norm(z_rightprev-z_rightnext)>10)
+                    {
+                        ctrl_text += " LEFT";
+                    }
+                    if(z_rightnext.y>z_rightprev.y&&(double)norm(z_rightprev-z_rightnext)>10)
+                    {
+                        ctrl_text += " DOWN";
+                    }
+                    if(z_rightnext.y<z_rightprev.y&&(double)norm(z_rightprev-z_rightnext)>10)
+                    {
+                        ctrl_text += " UP";
+                    }
+                    if((double)norm(z_rightprev-z_rightnext)<10)
+                    {
+                        ctrl_text = "STABLE";
+                    }
+                    
+                    z_rightprev.x = z_rightnext.x;
+                    z_rightprev.y = z_rightnext.y;
 
                 }
                 
@@ -541,12 +512,6 @@ int main(void)
                     q.y = centres1.at<double>(i,1)+40;
                     rectangle(right_mask1, p, q, CV_RGB(255, 255, 0));
                     
-                    p.x = centres2.at<double>(i,0)-40;
-                    p.y = centres2.at<double>(i,1)-40;
-                    
-                    q.x = centres2.at<double>(i,0)+40;
-                    q.y = centres2.at<double>(i,1)+40;
-                    rectangle(right_mask2, p, q, CV_RGB(255, 255, 0));
                 }
                 
                 for(int i=0;i<kpts2.size();i++)
@@ -557,6 +522,7 @@ int main(void)
                     circle(right_mask2, kpts2[i], 3, idx2,-1);
                 }
                 
+                putText(right_mask1, ctrl_text, Point2f(10, HEIGHT - 10), FONT_HERSHEY_SIMPLEX, 1, Scalar(0, 255, 0), 3, 3);
                 imshow("right", right_mask1);
                 moveWindow("right", 650, 0);
                 imshow("rightv", right_mask2);
