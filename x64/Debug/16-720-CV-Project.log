@@ -1,0 +1,9 @@
+﻿  surf.cpp
+c:\users\shreyans\desktop\cmu\spring 2016\02 computer vision (16720)\04 project\16-720-cv-project\16-720-cv-project\surf.cpp(223): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
+c:\users\shreyans\desktop\cmu\spring 2016\02 computer vision (16720)\04 project\16-720-cv-project\16-720-cv-project\surf.cpp(259): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
+c:\users\shreyans\desktop\cmu\spring 2016\02 computer vision (16720)\04 project\16-720-cv-project\16-720-cv-project\surf.cpp(269): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
+c:\users\shreyans\desktop\cmu\spring 2016\02 computer vision (16720)\04 project\16-720-cv-project\16-720-cv-project\surf.cpp(302): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
+c:\users\shreyans\desktop\cmu\spring 2016\02 computer vision (16720)\04 project\16-720-cv-project\16-720-cv-project\surf.cpp(311): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
+c:\users\shreyans\desktop\cmu\spring 2016\02 computer vision (16720)\04 project\16-720-cv-project\16-720-cv-project\surf.cpp(440): warning C4305: 'argument': truncation from 'double' to 'float'
+c:\users\shreyans\desktop\cmu\spring 2016\02 computer vision (16720)\04 project\16-720-cv-project\16-720-cv-project\surf.cpp(441): warning C4305: 'argument': truncation from 'double' to 'float'
+  16-720-CV-Project.vcxproj -> C:\Users\Shreyans\Desktop\CMU\Spring 2016\02 Computer Vision (16720)\04 Project\16-720-CV-Project\x64\Debug\16-720-CV-Project.exe
