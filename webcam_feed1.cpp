@@ -57,6 +57,9 @@ Matx34f M1(1,0,0,0,
            0,1,0,0,
            0,0,1,0);
 
+
+
+//Calculate Q by calibration and update this
 Matx44f Q(1, 0, 0, 1148.422351837158,
            0, 1, 0, 2968.675243377686,
            0, 0, 0, 1315.680854778361,
@@ -64,29 +67,29 @@ Matx44f Q(1, 0, 0, 1148.422351837158,
 
 
 
-CvScalar GiveColor(int k)
+Scalar GiveColor(int k)
 {
     if(k == 0)
     {
-        return CV_RGB(255,0,0);
+        return CvScalar(255,0,0);
         
     }else if(k == 1)
     {
-        return CV_RGB(0,255,0);
+        return CvScalar(0,255,0);
         
     }else if(k == 2)
     {
-        return CV_RGB(0,0,255);
+        return CvScalar(0,0,255);
         
     }else if(k == 3)
     {
-        return CV_RGB(255,0,255);
+        return CvScalar(255,0,255);
     }else if(k == 4)
     {
-        return CV_RGB(255,255,0);
+        return CvScalar(255,255,0);
     }else
     {
-        return CV_RGB(104,200,134);
+        return CvScalar(104,200,134);
     }
 }
 
@@ -216,8 +219,6 @@ Mat StereoMatching(Mat left, Mat right)
     
     Mat raw_disp_vis;
     getDisparityVis(left_disp,raw_disp_vis,vis_mult);
-    normalize(raw_disp_vis, raw_disp_vis, 0, 255, CV_MINMAX, CV_8U);
-    
     imshow("raw disparity", raw_disp_vis);
     moveWindow("raw disparity", 0, 400);
     
@@ -235,6 +236,18 @@ Mat StereoMatching(Mat left, Mat right)
 
 int main(void)
 {
+<<<<<<< HEAD
+	int k = 0;
+	int frame_num = 0;
+	cv::Mat mean_;
+
+
+	//clustering
+	int clusterNum = 3;
+	int attempts = 10;
+	Mat labels1, labels2;
+	Mat_<double> centres1, centres2;
+=======
     int k=0;
     int frame_num=0;
     cv::Mat mean_;
@@ -244,7 +257,7 @@ int main(void)
     int clusterNum = 5;
     int attempts = 10;
     Mat labels1,labels2;
-    Mat_<double> centres1,centres2,centres3,centres4;
+    Mat_<double> centres1,centres2;
     
     
     TermCriteria TC;
@@ -262,8 +275,6 @@ int main(void)
     z_rightprev.x = 0;
     z_rightprev.y = 0;
     
-    double prev_depth=0,next_depth;
-    
     while(1)
     {
         
@@ -277,7 +288,6 @@ int main(void)
             img2 = cvarrToMat(frame2);
             
             string ctrl_text = "";
-            string ctrl_dep  = "";
         
             resize(img1,img1,Size(WIDTH,HEIGHT),CV_INTER_CUBIC);
             resize(img2,img2,Size(WIDTH,HEIGHT),CV_INTER_CUBIC);
@@ -439,7 +449,6 @@ int main(void)
                 
                 Mat right_mask1(g_greyscale_image_right.size(),CV_8UC3);
                 Mat right_mask2(g_greyscale_image_right.size(),CV_8UC3);
-
                 cvtColor(g_greyscale_image_right, right_mask1, CV_GRAY2BGR);
                 cvtColor(g_greyscale_image_right, right_mask2, CV_GRAY2BGR);
                 
@@ -475,10 +484,10 @@ int main(void)
                 ctrl_text = "GO";
                 if(kpts2.size()!=0)
                 {
-                    kmeans(kpts2, clusterNum, labels1, TC, attempts,  KMEANS_PP_CENTERS, centres3);
-                    kmeans(vkpts2, clusterNum, labels2, TC, attempts,  KMEANS_PP_CENTERS, centres4);
+                    kmeans(kpts2, clusterNum, labels1, TC, attempts,  KMEANS_PP_CENTERS, centres1);
+                    kmeans(vkpts2, clusterNum, labels2, TC, attempts,  KMEANS_PP_CENTERS, centres2);
                     
-                    reduce(centres3, mean_, 0, CV_REDUCE_AVG);
+                    reduce(centres1, mean_, 0, CV_REDUCE_AVG);
                     z_rightnext.x = mean_.at<double>(0,0);
                     z_rightnext.y = mean_.at<double>(0,1);
                     
@@ -505,100 +514,365 @@ int main(void)
                     
                     z_rightprev.x = z_rightnext.x;
                     z_rightprev.y = z_rightnext.y;
+>>>>>>> origin/master
 
-                }
-                
-                for(int i=0;i<centres3.rows;i++)
-                {
-                    Point2f p,q;
-                    p.x = centres3.at<double>(i,0)-40;
-                    p.y = centres3.at<double>(i,1)-40;
-                    
-                    q.x = centres3.at<double>(i,0)+40;
-                    q.y = centres3.at<double>(i,1)+40;
-                    rectangle(right_mask1, p, q, CV_RGB(255, 255, 0));
-                    
-                }
-                
-                for(int i=0;i<kpts2.size();i++)
-                {
-                    CvScalar idx1 = GiveColor(labels1.at<int>(i,0));
-                    CvScalar idx2 = GiveColor(labels2.at<int>(i,0));
-                    circle(right_mask1, kpts2[i], 3, idx1,-1);
-                    circle(right_mask2, kpts2[i], 3, idx2,-1);
-                    
-                }
-                
-                putText(right_mask1, ctrl_text, Point2f(10, HEIGHT - 10), FONT_HERSHEY_SIMPLEX, 1, Scalar(0, 255, 0), 3, 3);
-                imshow("right", right_mask1);
-                moveWindow("right", 650, 0);
-                imshow("rightv", right_mask2);
-                moveWindow("rightv", 650, 410);
-                k = waitKey(35);
-            }
-            if(frame_num>0)
-            {
-                if(kpts2.size() >= FEATURE_THRESHOLD)
-                {
-                    prevrightpts.assign(kpts2.begin(), kpts2.end()); // retain previously tracked keypoints
-                    
-                }else //if(nextleftpts.size()<=MIN_FEATURES)
-                {
-                    goodFeaturesToTrack(g_greyscale_image_right, prevrightpts, MAX_FEATURES, QUALITY_EIGVALUE, MIN_DISTANCE);
-                }
-            }
-            
-            Mat depth(g_greyscale_image_right.size(),CV_8UC3);
-            cvtColor(g_greyscale_image_right, depth, CV_GRAY2BGR);
-            g_greyscale_image_right.copyTo(prevrightimg);
-            Mat disp = StereoMatching(g_greyscale_image_left, g_greyscale_image_right);
-            Mat _3dimage(WIDTH,HEIGHT,CV_32FC3);
-            reprojectImageTo3D(disp,_3dimage, Q,false,CV_32F);
-            
-            Point2f a;
-            a.x = z_rightprev.x;
-            a.y = z_rightprev.y;
-            
-            next_depth = _3dimage.at<Vec3f>((int)a.y, (int)a.x)[2];
-            
-            
-            if(fabs(next_depth)-prev_depth>50)
-            {
-                ctrl_dep = "GO AHEAD";
-                
-            }else if(fabs(next_depth)-prev_depth<0)
-            {
-                ctrl_dep = "GO BACK";
-            }else
-            {
-                ctrl_dep = "IN PLANE";
-            }
-            
-            circle(depth, a, 3,CV_RGB(255, 255, 0),-1);
-            putText(depth, ctrl_dep, Point2f(10, HEIGHT - 10), FONT_HERSHEY_SIMPLEX, 1, Scalar(0, 255, 0), 3, 3);
-            imshow("depth_", depth);
-            moveWindow("depth_", 0, 0);
-            
-            prev_depth = next_depth;
-    
-            
-            frame_num++;
-            t1 = (double)getTickCount();
-        }
-    
-        
-        if (k == 27)
-        {
-            break;
-        }
-  
-    }
-    
-    
-    cvReleaseCapture(&capture1);
-    cvReleaseCapture(&capture2);
-    
 
-    
-    return 0;
+	TermCriteria TC;
+	TC = TermCriteria(CV_TERMCRIT_ITER | CV_TERMCRIT_EPS, 10000, 0.0001);
+
+	Mat img1, img2;
+	CvCapture *capture1 = cvCaptureFromCAM(0);
+	CvCapture *capture2 = cvCaptureFromCAM(0);
+
+	double t, t1 = 0;
+
+	z_leftprev.x = 0;
+	z_leftprev.y = 0;
+
+	z_rightprev.x = 0;
+	z_rightprev.y = 0;
+
+	while (1)
+	{
+
+		IplImage* frame1 = cvQueryFrame(capture1);
+		IplImage* frame2 = cvQueryFrame(capture2);
+
+		if (capture1 != NULL || capture2 != NULL)
+		{
+			t = double(getTickCount());
+			img1 = cvarrToMat(frame1);
+			img2 = cvarrToMat(frame2);
+
+			string ctrl_text = "";
+
+			resize(img1, img1, Size(WIDTH, HEIGHT), CV_INTER_CUBIC);
+			resize(img2, img2, Size(WIDTH, HEIGHT), CV_INTER_CUBIC);
+
+			cvtColor(img1, g_greyscale_image_left, CV_RGB2GRAY);
+			cvtColor(img2, g_greyscale_image_right, CV_RGB2GRAY);
+
+
+			vector<Point2f> nextleftpts, kpts1, vkpts1;
+			if (prevleftpts.size() < MIN_FEATURES)
+			{
+				ctrl_text = "STOP MOVING";
+
+				//control input
+			}
+			else if (frame_num > 0)
+			{
+				t = (double)getTickCount();
+				vector<uchar> status;
+				vector<float> error;
+				vector<Mat> nextleftpyr, prevleftpyr;
+				buildOpticalFlowPyramid(prevleftimg, prevleftpyr, Size(7, 7), 4);
+				buildOpticalFlowPyramid(g_greyscale_image_left, nextleftpyr, Size(7, 7), 4);
+				CvTermCriteria optical_flow_termination_criteria
+					= cvTermCriteria(CV_TERMCRIT_ITER | CV_TERMCRIT_EPS, 20, 0.1);
+				calcOpticalFlowPyrLK(prevleftpyr, nextleftpyr, prevleftpts, nextleftpts, status, error, Size(7, 7), 4, optical_flow_termination_criteria, OPTFLOW_LK_GET_MIN_EIGENVALS);
+
+				Mat left_mask1(g_greyscale_image_left.size(), CV_8UC3);
+				Mat left_mask2(g_greyscale_image_left.size(), CV_8UC3);
+				cvtColor(g_greyscale_image_left, left_mask1, CV_GRAY2BGR);
+				cvtColor(g_greyscale_image_left, left_mask2, CV_GRAY2BGR);
+
+				ctrl_text = "GO";
+
+				for (size_t i = 0; i < nextleftpts.size(); i++)
+				{
+					if (nextleftpts[i].x >= 0 && nextleftpts[i].x <= WIDTH && nextleftpts[i].y >= 0 && nextleftpts[i].y <= HEIGHT)
+					{
+						CvScalar line_color; line_color = CV_RGB(255, 0, 0);
+						Point2f p, q;
+						p.x = (double)prevleftpts[i].x;
+						p.y = (double)prevleftpts[i].y;
+						q.x = (double)nextleftpts[i].x;
+						q.y = (double)nextleftpts[i].y;
+
+						double d = sqrt(pow(p.x - q.x, 2) + pow(p.y - q.y, 2));
+
+						if (d < 20)
+						{
+							//circle(left_mask, q, 4, Scalar(0,255,0),-1);
+							arrowedLine(left_mask1, p, q, Scalar(255, 100, 100), 1, CV_AA, 0, 0.4);
+							arrowedLine(left_mask2, p, q, Scalar(255, 100, 100), 1, CV_AA, 0, 0.4);
+						}
+
+
+						vkpts1.push_back((q - p)*getTickFrequency() / (t - t1));
+						kpts1.push_back(nextleftpts[i]);
+
+					}
+				}
+
+
+
+				if (kpts1.size() != 0)
+				{
+					kmeans(kpts1, clusterNum, labels1, TC, attempts, KMEANS_PP_CENTERS, centres1);
+					kmeans(vkpts1, clusterNum, labels2, TC, attempts, KMEANS_PP_CENTERS, centres2);
+
+					reduce(centres1, mean_, 0, CV_REDUCE_AVG);
+					z_leftnext.x = mean_.at<double>(0, 0);
+					z_leftnext.y = mean_.at<double>(0, 1);
+
+					if (z_leftnext.x > z_leftprev.x&&norm(z_leftprev - z_leftnext) > 10)
+					{
+						ctrl_text += " RIGHT";
+					}
+					if (z_leftnext.x < z_leftprev.x&&norm(z_leftprev - z_leftnext)>10)
+					{
+						ctrl_text += " LEFT";
+					}
+					if (z_leftnext.y > z_leftprev.y&&norm(z_leftprev - z_leftnext) > 10)
+					{
+						ctrl_text += " DOWN";
+					}
+					if (z_leftnext.y < z_leftprev.y&&norm(z_leftprev - z_leftnext)>10)
+					{
+						ctrl_text += " UP";
+					}
+					if (norm(z_leftprev - z_leftnext) < 10)
+					{
+						ctrl_text = "STABLE";
+					}
+
+					z_leftprev.x = z_leftnext.x;
+					z_leftprev.y = z_leftnext.y;
+				}
+
+				for (int i = 0; i < centres1.rows; i++)
+				{
+					Point2f p, q;
+					p.x = centres1.at<double>(i, 0) - 40;
+					p.y = centres1.at<double>(i, 1) - 40;
+
+					q.x = centres1.at<double>(i, 0) + 40;
+					q.y = centres1.at<double>(i, 1) + 40;
+					rectangle(left_mask1, p, q, CV_RGB(255, 255, 0));
+
+				}
+
+				for (int i = 0; i < kpts1.size(); i++)
+				{
+					CvScalar idx1 = GiveColor(labels1.at<int>(i, 0));
+					CvScalar idx2 = GiveColor(labels2.at<int>(i, 0));
+					circle(left_mask1, kpts1[i], 3, idx1, -1);
+					circle(left_mask2, kpts1[i], 3, idx2, -1);
+				}
+
+				putText(left_mask1, ctrl_text, Point2f(10, 340 - 10), FONT_HERSHEY_SIMPLEX, 1, Scalar(0, 255, 0), 3, 3);
+
+				imshow("left", left_mask1);
+				moveWindow("left", 0, 0);
+				imshow("leftv", left_mask2);
+				moveWindow("leftv", 0, 410);
+				//k = waitKey(35);
+			}
+			if (frame_num > 0)
+			{
+				if (kpts1.size() >= FEATURE_THRESHOLD)
+				{
+					prevleftpts.assign(kpts1.begin(), kpts1.end()); // retain previously tracked keypoints
+
+				}
+				else //if(nextleftpts.size()<=MIN_FEATURES)
+				{
+					goodFeaturesToTrack(g_greyscale_image_left, prevleftpts, MAX_FEATURES, QUALITY_EIGVALUE, MIN_DISTANCE);
+				}
+			}
+
+
+			g_greyscale_image_left.copyTo(prevleftimg);
+
+
+
+			vector<Point2f> nextrightpts, kpts2, vkpts2;
+			if (prevrightpts.size() < MIN_FEATURES)
+			{
+				//control input
+				ctrl_text = "STOP MOVING";
+			}
+			else if (frame_num > 0)
+			{
+				vector<uchar> status;
+				vector<float> error;
+				vector<Mat> nextrightpyr, prevrightpyr;
+				buildOpticalFlowPyramid(prevrightimg, prevrightpyr, Size(7, 7), 4);
+				buildOpticalFlowPyramid(g_greyscale_image_right, nextrightpyr, Size(7, 7), 4);
+				CvTermCriteria optical_flow_termination_criteria
+					= cvTermCriteria(CV_TERMCRIT_ITER | CV_TERMCRIT_EPS, 20, 0.1);
+				calcOpticalFlowPyrLK(prevrightpyr, nextrightpyr, prevrightpts, nextrightpts, status, error, Size(7, 7), 4, optical_flow_termination_criteria, OPTFLOW_LK_GET_MIN_EIGENVALS);
+
+				Mat right_mask1(g_greyscale_image_right.size(), CV_8UC3);
+				Mat right_mask2(g_greyscale_image_right.size(), CV_8UC3);
+				cvtColor(g_greyscale_image_right, right_mask1, CV_GRAY2BGR);
+				cvtColor(g_greyscale_image_right, right_mask2, CV_GRAY2BGR);
+
+				for (size_t i = 0; i < nextrightpts.size(); i++)
+				{
+					if (nextrightpts[i].x >= 0 && nextrightpts[i].x < WIDTH && nextrightpts[i].y >= 0 && nextrightpts[i].y <= HEIGHT)
+					{
+
+						//
+						CvScalar line_color; line_color = CV_RGB(255, 0, 0);
+						Point2f p, q;
+						p.x = (double)prevrightpts[i].x;
+						p.y = (double)prevrightpts[i].y;
+						q.x = (double)nextrightpts[i].x;
+						q.y = (double)nextrightpts[i].y;
+
+						double d = sqrt(pow(p.x - q.x, 2) + pow(p.y - q.y, 2));
+
+						if (d < 20)
+						{
+							//circle(right_mask, q, 4, Scalar(0,255,0),-1);
+							arrowedLine(right_mask1, p, q, Scalar(255, 100, 100), 1, CV_AA, 0, 0.4);
+							arrowedLine(right_mask2, p, q, Scalar(255, 100, 100), 1, CV_AA, 0, 0.4);
+
+						}
+
+						vkpts2.push_back((q - p)*getTickFrequency() / (t - t1));
+						kpts2.push_back(nextrightpts[i]);
+
+					}
+				}
+
+				ctrl_text = "GO";
+				if (kpts2.size() != 0)
+				{
+					kmeans(kpts2, clusterNum, labels1, TC, attempts, KMEANS_PP_CENTERS, centres1);
+					kmeans(vkpts2, clusterNum, labels2, TC, attempts, KMEANS_PP_CENTERS, centres2);
+
+					reduce(centres1, mean_, 0, CV_REDUCE_AVG);
+					z_rightnext.x = mean_.at<double>(0, 0);
+					z_rightnext.y = mean_.at<double>(0, 1);
+
+					if (z_rightnext.x > z_rightprev.x && (double)norm(z_rightprev - z_rightnext) > 10)
+					{
+						ctrl_text += " RIGHT";
+					}
+					if (z_rightnext.x < z_rightprev.x && (double)norm(z_rightprev - z_rightnext)>10)
+					{
+						ctrl_text += " LEFT";
+					}
+					if (z_rightnext.y > z_rightprev.y && (double)norm(z_rightprev - z_rightnext) > 10)
+					{
+						ctrl_text += " DOWN";
+					}
+					if (z_rightnext.y < z_rightprev.y && (double)norm(z_rightprev - z_rightnext)>10)
+					{
+						ctrl_text += " UP";
+					}
+					if ((double)norm(z_rightprev - z_rightnext) < 10)
+					{
+						ctrl_text = "STABLE";
+					}
+
+					z_rightprev.x = z_rightnext.x;
+					z_rightprev.y = z_rightnext.y;
+
+				}
+
+				for (int i = 0; i < centres1.rows; i++)
+				{
+					Point2f p, q;
+					p.x = centres1.at<double>(i, 0) - 40;
+					p.y = centres1.at<double>(i, 1) - 40;
+
+					q.x = centres1.at<double>(i, 0) + 40;
+					q.y = centres1.at<double>(i, 1) + 40;
+					rectangle(right_mask1, p, q, CV_RGB(255, 255, 0));
+
+				}
+
+				for (int i = 0; i < kpts2.size(); i++)
+				{
+					CvScalar idx1 = GiveColor(labels1.at<int>(i, 0));
+					CvScalar idx2 = GiveColor(labels2.at<int>(i, 0));
+					circle(right_mask1, kpts2[i], 3, idx1, -1);
+					circle(right_mask2, kpts2[i], 3, idx2, -1);
+				}
+
+				putText(right_mask1, ctrl_text, Point2f(10, HEIGHT - 10), FONT_HERSHEY_SIMPLEX, 1, Scalar(0, 255, 0), 3, 3);
+				imshow("right", right_mask1);
+				moveWindow("right", 650, 0);
+				imshow("rightv", right_mask2);
+				moveWindow("rightv", 650, 410);
+				k = waitKey(35);
+			}
+			if (frame_num > 0)
+			{
+				if (kpts2.size() >= FEATURE_THRESHOLD)
+				{
+					prevrightpts.assign(kpts2.begin(), kpts2.end()); // retain previously tracked keypoints
+
+				}
+				else //if(nextleftpts.size()<=MIN_FEATURES)
+				{
+					goodFeaturesToTrack(g_greyscale_image_right, prevrightpts, MAX_FEATURES, QUALITY_EIGVALUE, MIN_DISTANCE);
+				}
+			}
+
+
+			g_greyscale_image_right.copyTo(prevrightimg);
+
+			//Finding 3D coordinates from disparity image
+			Mat disp = StereoMatching(g_greyscale_image_left, g_greyscale_image_right);
+			Mat disp8, _3dimage;
+			reprojectImageTo3D(disp,_3dimage, Q,false,CV_32F);
+			Vec3d kpts_3d;
+			Vec3d temp_pt;
+			int num_of_pts = kpts2.size();
+
+			kpts_3d[0] = 0;
+			kpts_3d[1] = 0;
+			kpts_3d[2] = 0;
+
+			
+			temp_pt = _3dimage.at<double>(1, 1);
+
+			cout << _3dimage.at<double>(0, 0);
+			
+			for (int i = 0; i < kpts2.size(); i++)
+			{
+				
+				temp_pt = _3dimage.at<double>((int)kpts2[i].x, (int)kpts2[i].y);
+
+				
+				printf("test %lf\n", temp_pt[0]);
+				
+				kpts_3d = kpts_3d + temp_pt;
+			}
+
+		/*	kpts_3d = kpts_3d / num_of_pts;
+			printf("\nAverage z distance is %d\n", kpts_3d[2]);*/
+
+			
+
+			normalize(disp, disp8, 0, 255, CV_MINMAX, CV_8U);
+
+
+			imshow("3d", disp8);
+
+			frame_num++;
+			t1 = (double)getTickCount();
+		}
+
+
+		if (k == 27)
+		{
+			break;
+		}
+
+	}
+
+
+	cvReleaseCapture(&capture1);
+	cvReleaseCapture(&capture2);
+
+
+
+	return 0;
 }
